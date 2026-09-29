@@ -1,169 +1,157 @@
 package org.example;
 
 import java.io.*;
-
-import java.nio.file.*;
-
 import java.util.*;
-
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-
-class Producto {
-
-    String id, nombre; double precio; int cantidadVendida = 0;
-
-    Producto(String id, String n, double p) { this.id = id; this.nombre = n; this.precio = p; }
-
-    public String getId() { return id; }
-
-}
-
-class Vendedor {
-
-    String tipoDoc, numDoc, nombres, apellidos; double ventasTotales = 0.0;
-
-    Vendedor(String td, String nd, String n, String a) { this.tipoDoc = td; this.numDoc = nd; this.nombres = n; this.apellidos = a; }
-
-    public String getNumDoc() { return numDoc; }
-
-}
-
 
 public class Main {
 
     public static void main(String[] args) {
+        System.out.println("Iniciando procesamiento de ventas...");
 
-        try {
+        Map<String, Producto> mapaProductos = cargarProductos("productos.csv");
+        Map<String, Vendedor> mapaVendedores = cargarVendedores("vendedores.csv");
 
-            System.out.println("Iniciando...");
+        procesarArchivosVentas(mapaProductos, mapaVendedores);
 
+        generarReporteProductos(mapaProductos);
+        generarReporteVendedores(mapaVendedores);
 
-
-            Map<String, Producto> mapaProductos = cargarDatos("productos.csv", linea -> {
-
-                String[] d = linea.split(";"); return new Producto(d[0], d[1], Double.parseDouble(d[2]));
-
-            }, Producto::getId);
-
-
-
-            Map<String, Vendedor> mapaVendedores = cargarDatos("vendedores.csv", linea -> {
-
-                String[] d = linea.split(";"); return new Vendedor(d[0], d[1], d[2], d[3]);
-
-            }, Vendedor::getNumDoc);
-
-
-            Files.walk(Paths.get("."))
-
-                    .filter(path -> path.getFileName().toString().startsWith("vendedor_"))
-
-                    .forEach(path -> procesarArchivoVenta(path, mapaProductos, mapaVendedores));
-
-
-            generarReportes(mapaVendedores, mapaProductos);
-
-
-
-            System.out.println("¡Reportes generados!");
-
-        } catch (Exception e) { System.err.println("ERROR: " + e.getMessage()); }
-
+        System.out.println("¡Reportes generados!");
     }
 
-
-    private static <T, K> Map<K, T> cargarDatos(
-            String archivo,
-            java.util.function.Function<String, T> constructor,
-            java.util.function.Function<T, K> getKey) throws IOException {
-
-        try (Stream<String> lineas = Files.lines(Paths.get(archivo))) {
-            return lineas
-                    .map(constructor)
-                    .collect(Collectors.toMap(getKey, item -> item));
-        }
-
-    }
-
-
-
-    private static void procesarArchivoVenta(
-            Path archivo,
-            Map<String, Producto> prods,
-            Map<String, Vendedor> vends) {
-
-        try {
-
-            List<String> lineas = Files.readAllLines(archivo);
-
-            String idVendedor = lineas.get(0).split(";")[1];
-
-            Vendedor vendedor = vends.get(idVendedor);
-
-            if (vendedor == null) return;
-
-            for (int i = 1; i < lineas.size(); i++) {
-
-                String[] datos = lineas.get(i).split(";");
-
-                Producto producto = prods.get(datos[0]);
-
-                int cantidad = Integer.parseInt(datos[1]);
-
-                if (producto != null) {
-
-                    vendedor.ventasTotales += producto.precio * cantidad;
-
-                    producto.cantidadVendida += cantidad;
-
+    private static Map<String, Producto> cargarProductos(String ruta) {
+        Map<String, Producto> productos = new HashMap<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(ruta))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                String[] datos = linea.split(";");
+                if (datos.length >= 3) {
+                    String id = datos[0].trim();
+                    String nombre = datos[1].trim();
+                    double precio = Double.parseDouble(datos[2].trim().replace(",", "."));
+                    productos.put(id, new Producto(id, nombre, precio));
                 }
-
             }
-
-        } catch (Exception e) { System.err.println("ADVERTENCIA: " + archivo.getFileName()); }
-
+        } catch (Exception e) {
+            System.err.println("Error al cargar productos: " + e.getMessage());
+        }
+        return productos;
     }
 
-
-
-    private static void generarReportes(
-            Map<String, Vendedor> mapaVendedores,
-            Map<String, Producto> mapaProductos) throws IOException {
-
-        List<Vendedor> vendedoresOrdenados = mapaVendedores.values().stream()
-
-                .sorted(Comparator.comparingDouble((Vendedor v) -> -v.ventasTotales))
-
-                .collect(Collectors.toList());
-
-        try (PrintWriter writer = new PrintWriter("reporte_vendedores.csv")) {
-
-            for (Vendedor v : vendedoresOrdenados) {
-
-                writer.printf("%s %s;%.2f\n", v.nombres, v.apellidos, v.ventasTotales);
-
+    private static Map<String, Vendedor> cargarVendedores(String ruta) {
+        Map<String, Vendedor> vendedores = new HashMap<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(ruta))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                String[] datos = linea.split(";");
+                if (datos.length >= 4) {
+                    String tipoDoc = datos[0].trim();
+                    String numDoc = datos[1].trim();
+                    String nombres = datos[2].trim();
+                    String apellidos = datos[3].trim();
+                    vendedores.put(numDoc, new Vendedor(tipoDoc, numDoc, nombres, apellidos));
+                }
             }
-
+        } catch (Exception e) {
+            System.err.println("Error al cargar vendedores: " + e.getMessage());
         }
-
-        List<Producto> productosOrdenados = mapaProductos.values().stream()
-
-                .sorted(Comparator.comparingInt((Producto p) -> -p.cantidadVendida))
-
-                .collect(Collectors.toList());
-
-        try (PrintWriter writer = new PrintWriter("reporte_productos.csv")) {
-
-            for (Producto p : productosOrdenados) {
-
-                writer.printf("%s;%.2f\n", p.nombre, p.precio);
-
-            }
-
-        }
-
+        return vendedores;
     }
 
+    private static void procesarArchivosVentas(Map<String, Producto> productos, Map<String, Vendedor> vendedores) {
+        File carpetaRaiz = new File(".");
+        File[] archivosVentas = carpetaRaiz.listFiles((dir, name) -> name.startsWith("vendedor_") && name.endsWith(".csv"));
+
+        if (archivosVentas == null) return;
+
+        for (File archivo : archivosVentas) {
+            try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
+                String primeraLinea = br.readLine();
+                if (primeraLinea == null) continue;
+
+                String[] cabecera = primeraLinea.split(";");
+                if (cabecera.length < 2) continue;
+                String numDocVendedor = cabecera[1].trim();
+
+                Vendedor vendedor = vendedores.get(numDocVendedor);
+
+                String linea;
+                while ((linea = br.readLine()) != null) {
+                    String[] datosVenta = linea.split(";");
+                    if (datosVenta.length >= 2) {
+                        String idProducto = datosVenta[0].trim();
+                        int cantidad = Integer.parseInt(datosVenta[1].trim());
+
+                        Producto prod = productos.get(idProducto);
+                        if (prod != null) {
+                            prod.sumarCantidad(cantidad);
+                            if (vendedor != null) {
+                                vendedor.sumarVenta(cantidad * prod.getPrecio());
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Registro omitido en: " + archivo.getName());
+            }
+        }
+    }
+
+    private static void generarReporteProductos(Map<String, Producto> productos) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter("reporte_productos.csv"))) {
+            for (Producto p : productos.values()) {
+                pw.println(p.getNombre() + ";" + p.getCantidadVendida() + ";" + (p.getCantidadVendida() * p.getPrecio()));
+            }
+        } catch (IOException e) {
+            System.err.println("Error en reporte productos: " + e.getMessage());
+        }
+    }
+
+    private static void generarReporteVendedores(Map<String, Vendedor> vendedores) {
+        List<Vendedor> lista = new ArrayList<>(vendedores.values());
+        lista.sort((v1, v2) -> Double.compare(v2.getVentasTotales(), v1.getVentasTotales()));
+
+        try (PrintWriter pw = new PrintWriter(new FileWriter("reporte_vendedores.csv"))) {
+            for (Vendedor v : lista) {
+                pw.println(v.getNombres() + " " + v.getApellidos() + ";" + v.getVentasTotales());
+            }
+        } catch (IOException e) {
+            System.err.println("Error en reporte vendedores: " + e.getMessage());
+        }
+    }
+}
+
+// Clases de modelo unificadas en el mismo archivo
+class Producto {
+    private String id, nombre;
+    private double precio;
+    private int cantidadVendida = 0;
+
+    public Producto(String id, String nombre, double precio) {
+        this.id = id;
+        this.nombre = nombre;
+        this.precio = precio;
+    }
+
+    public void sumarCantidad(int c) { this.cantidadVendida += c; }
+    public String getNombre() { return nombre; }
+    public double getPrecio() { return precio; }
+    public int getCantidadVendida() { return cantidadVendida; }
+}
+
+class Vendedor {
+    private String tipoDoc, numDoc, nombres, apellidos;
+    private double ventasTotales = 0.0;
+
+    public Vendedor(String td, String nd, String n, String a) {
+        this.tipoDoc = td;
+        this.numDoc = nd;
+        this.nombres = n;
+        this.apellidos = a;
+    }
+
+    public void sumarVenta(double monto) { this.ventasTotales += monto; }
+    public String getNombres() { return nombres; }
+    public String getApellidos() { return apellidos; }
+    public double getVentasTotales() { return ventasTotales; }
 }
