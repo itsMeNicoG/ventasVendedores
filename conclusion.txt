@@ -1,0 +1,17 @@
+RESUMEN DEL PROYECTO "VENTAS Y VENDEDORES" - ENTREGA FINAL (SEMANA 7)
+
+1. Lo aprendido durante el desarrollo del proyecto:
+El desarrollo de este trabajo consolidó los conceptos teórico-prácticos de la Programación Orientada a Objetos (POO) y los fundamentos del lenguaje Java (tipos de datos primitivos, control de flujo y encapsulamiento estricto para proteger el estado de las clases). Evolucionamos desde la estructura básica hasta construir una arquitectura robusta capaz de procesar dinámicamente archivos .csv delimitados por punto y coma (;), gestionando eficientemente estructuras en memoria mediante arreglos, listas dinámicas y diccionarios de datos (HashMap). Logramos la generación automatizada de reportes consolidados y ordenados de ventas por producto y vendedor sin requerir interacción alguna por consola, implementando tolerancia a fallos mediante bloques try-catch, validaciones estrictas de formato y documentación estandarizada con comentarios Javadoc.
+
+2. Posibles aplicaciones en la vida profesional de las destrezas y conocimientos adquiridos:
+Las competencias técnicas y analíticas desarrolladas en este proyecto tienen aplicación directa en diversos entornos laborales reales:
+- Validación y confirmación de datos: La implementación de controles de formato y la prevención de incoherencias en datos de entrada es vital en la gestión de cadenas de suministro e inventarios para garantizar bases de datos confiables y sin duplicados.
+- Automatización de procesos y reportes (ETL): La lógica para extraer, transformar y consolidar datos de archivos planos .csv es ampliamente utilizada en áreas financieras, contables y de desarrollo backend para automatizar reportes de gestión, reduciendo tiempos operativos y eliminando el error humano.
+- Gestión eficiente de recursos: El uso de estructuras en memoria (HashMap, Lists) desarrolla un pensamiento lógico enfocado en la optimización de recursos y rendimiento computacional, un criterio indispensable al diseñar sistemas de software escalables.
+
+3. Dificultades presentadas durante el desarrollo del proyecto:
+Durante el ciclo de desarrollo se presentaron y superaron los siguientes retos técnicos:
+- Sincronización y cruce de datos en memoria: Asegurar la correcta correlación entre las llaves de los HashMaps (IDs de productos y cédulas de vendedores) y las filas de los archivos dinámicos (vendedor_[ID].csv) evitando excepciones de tipo NullPointerException.
+- Automatización total sin interacción: Reestructurar la lógica del programa para que funcionara de manera 100% autónoma y secuencial al ser ejecutado, garantizando que el sistema lea, procese y exporte reportes sin solicitar entradas por teclado al usuario.
+- Normalización de formatos numéricos: Controlar adecuadamente el parsing de números decimales y la conversión de separadores (comas y puntos) al leer y escribir los archivos .csv.
+- Integración colaborativa: Coordinar el control de versiones en GitHub para sincronizar las contribuciones del equipo y mantener una rama principal estable.
